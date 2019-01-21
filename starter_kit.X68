@@ -5,6 +5,12 @@
 *https://www.avalon-rpg.com/
 *-------------------------------------------------------
 
+* Name: Ben Millar
+* Student ID: C00236772
+* Estimated time to complete: 18 hours
+
+* Session 1 Start: 14:40 End: 15:05 21/01/2019
+
 *-------------------------------------------------------
 *Validation values to be used, modify as needed
 *Add additional validation values as required
@@ -51,6 +57,7 @@ welcome:
     move.b  #14,D0          move literal 14 to DO
     trap    #15             trap and interpret value in D0
     bsr     endl            branch to endl subroutine
+    *halt here, progress on keypress
     rts                     return from welcome: subroutine
 
 *-------------------------------------------------------
@@ -58,13 +65,16 @@ welcome:
 *-------------------------------------------------------    
 input:
     bsr     potions         branch to potion input subroutine
+    *halt here, take input
     bsr     weapons        branch to weaponss input subroutine
+    *halt here, take input
     rts
 
 *-------------------------------------------------------
 *----------------Gameloop (main loop)-------------------
 *------------------------------------------------------- 
 gameloop:
+    * Leave this alone! Game engine
     bsr     update          branch to update game subroutine 
     bsr     clear_screen    clears the screen         
     bsr     draw            branch to draw screen subroutine
@@ -84,6 +94,8 @@ gameloop:
 update:
     bsr     endl            print a CR and LF
     bsr     decorate        decorate with dots using a loop
+    * the below message must be set for each quest update
+    * increment some kind of progress counter?
     lea     update_msg,A1   
     move.b  #14,D0
     trap    #15
@@ -97,6 +109,7 @@ update:
 draw:
     bsr     endl
     bsr     decorate
+    * the below message must be set for each quest update
     lea     draw_msg,A1
     move.b  #14,D0
     trap    #15
@@ -109,6 +122,8 @@ draw:
 * resource
 *------------------------------------------------------- 
 feed:
+    * I assume this section will need to take user inputs
+    * and validate the same based on the players inventory
     bsr     endl
     bsr     decorate
     lea     potion_msg,A1
@@ -128,6 +143,7 @@ potions:
     move.b  #14,D0
     trap    #15
     bsr     decorate
+    * halt here for player to read information
     rts
 
 *-------------------------------------------------------
@@ -141,6 +157,7 @@ weapons:
     move.b  #14,D0
     trap    #15
     bsr     decorate
+    *halt here for player to read information
     rts
 
 *-------------------------------------------------------
@@ -149,6 +166,7 @@ weapons:
 gameplay:
     bsr     endl
     bsr     decorate
+    * update quest message PRN
     lea     gameplay_msg,A1
     move.b  #14,D0
     trap    #15
@@ -171,12 +189,14 @@ hud:
     move.b  #3,D0       move literal 3 to D0
     trap    #15         intrepret value in D0, which 3 which displays D1
     bsr     decorate
+    * halt here to allow player to read information
     rts
 
 *-------------------------------------------------------
 *-----------------------Being Attacked------------------
 * This could be used for collision detection
 *-------------------------------------------------------
+* Not entirely sure how this works! Ask about this in class on Tuesday
 collision:
     move.b  #mine_loc,D1
     cmp     #100,D1 is( x == 100)?
@@ -198,6 +218,9 @@ collision_miss:
 *-------------------------------------------------------
 *--------------------------Loop-------------------------
 *-------------------------------------------------------
+
+    * I believe this is a general loop function to be used
+    * in multiple scenarios. Confirm this.
 loop:
     move.b  #5, D3 loop counter D3=5
 next:
@@ -284,6 +307,8 @@ health:     ds.w    1
 score:      ds.w    1 reserve space for score
 
     end start
+
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
