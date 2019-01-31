@@ -10,6 +10,7 @@
 * Estimated time to complete: 18 hours
 
 * Session 1 Start: 14:40 End: 15:05 21/01/2019
+* Session 2 Start: 14:00
 
 *-------------------------------------------------------
 *Validation values to be used, modify as needed
@@ -57,7 +58,27 @@ welcome:
     move.b  #14,D0          move literal 14 to DO
     trap    #15             trap and interpret value in D0
     bsr     endl            branch to endl subroutine
-    *halt here, progress on keypress
+    
+    move.b  #13,D0          display string w/ CR LF
+    lea     takename_msg,A1
+    trap    #15
+    
+    move.b  #2, D0          take in player name
+    TRAP #15
+    
+    move.l  (A1),D7         store player name in D7
+    
+    move.b  #14,D0          display string w/o CR LF  
+    lea     intro1_msg,A1         
+    trap    #15
+    movea.l D7,A1
+    trap    #15
+    lea     intro2_msg,A1  
+    trap    #15
+    
+    move.b  #4, D0
+    trap    #15
+    
     rts                     return from welcome: subroutine
 
 *-------------------------------------------------------
@@ -66,7 +87,7 @@ welcome:
 input:
     bsr     potions         branch to potion input subroutine
     *halt here, take input
-    bsr     weapons        branch to weaponss input subroutine
+    bsr     weapons        branch to weapons input subroutine
     *halt here, take input
     rts
 
@@ -111,8 +132,6 @@ draw:
     bsr     decorate
     * the below message must be set for each quest update
     lea     draw_msg,A1
-    move.b  #14,D0
-    trap    #15
     bsr     decorate
     rts
 *-------------------------------------------------------
@@ -127,8 +146,6 @@ feed:
     bsr     endl
     bsr     decorate
     lea     potion_msg,A1
-    move.b  #14,D0
-    trap    #15
     bsr     decorate
     rts
 
@@ -140,9 +157,9 @@ potions:
     bsr     endl
     bsr     decorate
     lea     potions_msg,A1
-    move.b  #14,D0
-    trap    #15
     bsr     decorate
+       move.b  #14,D0
+    trap    #15
     * halt here for player to read information
     rts
 
@@ -285,6 +302,11 @@ welcome_msg:    dc.b    '*******************************************************
                 dc.b    $0D,$0A
                 dc.b    '************************************************************'
                 dc.b    $0D,$0A,0
+takename_msg:   dc.b    'What is your name?',0
+
+intro1_msg:     dc.b    'Welcome, ',0
+intro2_msg:     dc.b    ' to the world of Avalon',0
+
 potion_msg:     dc.b    'Feed load (each horse needs at least 100 units of feed)'
                 dc.b    $0D,$0A
                 dc.b    'Enter feed load : ',0
@@ -307,6 +329,7 @@ health:     ds.w    1
 score:      ds.w    1 reserve space for score
 
     end start
+
 
 
 *~Font name~Courier New~
