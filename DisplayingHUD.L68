@@ -1,0 +1,722 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 24/03/2019 21:25:38
+
+00000000                             1  ; GAME STATES: 
+00000000                             2  ;   0 = Introduction
+00000000                             3  ;   1 = Travelling
+00000000                             4  ;   2 = Outside town
+00000000                             5  ;   3 = Inside town
+00000000                             6  ;   4 = Item shop
+00000000                             7  ;   5 = Weapon shop
+00000000                             8  ;   6 = Art shop
+00000000                             9  
+00000000                            10  
+00001000                            11      ORG    $1000
+00001000                            12  START: 
+00001000  13FC 0064 00006000        13      MOVE.B  #100,PLAYER_HEALTH *init player health to 100
+00001008  13FC 0064 00006001        14      MOVE.B  #100,PLAYER_COINS *init player coins to 50
+00001010  13FC 0000 00006002        15      MOVE.B  #0,PLAYER_POTIONS *init player potions to 0
+00001018  13FC 0002 00006043        16      MOVE.B  #2,GAME_STATE *Set game state to OUTSIDE TOWN
+00001020  13FC 0000 00006044        17      MOVE.B  #0,DIALOGUE_STEP *init dialogue step to 0
+00001028  13FC 0000 00006045        18      MOVE.B  #0,PLAYER_HAS_SWORD *init player sword to false
+00001030                            19      
+00001030  6100 000E                 20      BSR     PRINT_TITLE
+00001034                            21   
+00001034  6100 0020                 22      BSR     INPUT_NAME
+00001038                            23      
+00001038  6100 005A                 24      BSR     GAME_LOOP
+0000103C                            25      
+0000103C  6100 0372                 26      BSR     EXIT
+00001040                            27      
+00001040                            28      
+00001040                            29  PRINT_TITLE:
+00001040                            30  
+00001040  43F9 00001465             31      LEA     MSG_TITLE,A1
+00001046  103C 000D                 32      MOVE.B  #13,D0  
+0000104A  4E4F                      33      TRAP    #15
+0000104C                            34      
+0000104C  6100 033E                 35      BSR     PRESS_ENTER
+00001050                            36      
+00001050  6100 034E                 37      BSR     CLEAR_SCREEN
+00001054                            38      
+00001054  4E75                      39      RTS
+00001056                            40      
+00001056                            41  INPUT_NAME:
+00001056                            42  
+00001056                            43  
+00001056  43F9 00001438             44      LEA     MSG_ENTER_NAME,A1       *Asks for player name
+0000105C  103C 000D                 45      MOVE.B  #13,D0
+00001060  4E4F                      46      TRAP    #15
+00001062                            47     
+00001062  43F9 00006003             48      LEA     PLAYER_NAME,A1          *Load address of PLAYER_NAME equ into A1
+00001068  103C 0002                 49      MOVE.B  #2,D0                   *Take text input from user, passes to player_name address via A1
+0000106C  4E4F                      50      TRAP    #15
+0000106E                            51      
+0000106E  103C 000E                 52      MOVE.B  #14,D0
+00001072                            53      
+00001072                            54      *Displays greeting to player
+00001072  43F9 0000144B             55      LEA     MSG_GREETING0,A1        
+00001078  4E4F                      56      TRAP    #15
+0000107A                            57      
+0000107A  43F9 00006003             58      LEA     PLAYER_NAME,A1
+00001080  4E4F                      59      TRAP    #15
+00001082                            60      
+00001082  43F9 00001450             61      LEA     MSG_GREETING1,A1
+00001088  4E4F                      62      TRAP    #15
+0000108A                            63      
+0000108A  6100 0300                 64      BSR     PRESS_ENTER
+0000108E                            65      
+0000108E  6100 0310                 66      BSR     CLEAR_SCREEN
+00001092                            67      
+00001092  4E75                      68      RTS
+00001094                            69      
+00001094                            70      
+00001094                            71  GAME_LOOP:
+00001094                            72         
+00001094  6100 0030                 73      BSR     RENDER
+00001098                            74      
+00001098  6100 0004                 75      BSR     TAKE_INPUT
+0000109C                            76  
+0000109C  61F6                      77      BSR     GAME_LOOP
+0000109E                            78      
+0000109E                            79      
+0000109E                            80  TAKE_INPUT:
+0000109E                            81  
+0000109E                            82      * Check GAME STATE and forward as appropriate
+0000109E  1839 00006043             83      MOVE.B  (GAME_STATE),D4
+000010A4  B87C 0000                 84      CMP     #0,D4
+000010A8  6700 007C                 85      BEQ     INTRODUCTION
+000010AC                            86      
+000010AC  B87C 0001                 87      CMP     #1,D4
+000010B0  6700 0234                 88      BEQ     MOVEMENT
+000010B4                            89      
+000010B4  B87C 0002                 90      CMP     #2,D4
+000010B8  6700 006E                 91      BEQ     OUTSIDE_TOWN
+000010BC                            92      
+000010BC  B87C 0003                 93      CMP     #3,D4
+000010C0  6700 0092                 94      BEQ     INSIDE_TOWN
+000010C4                            95      
+000010C4  4E75                      96      RTS
+000010C6                            97  
+000010C6                            98  RENDER:
+000010C6                            99  
+000010C6  6100 02D8                100      BSR     CLEAR_SCREEN
+000010CA  6100 0004                101      BSR     DISPLAY_HUD
+000010CE                           102      
+000010CE  4E75                     103      RTS
+000010D0                           104     
+000010D0                           105  DISPLAY_HUD:
+000010D0                           106  
+000010D0  6100 02AC                107      BSR     SCREEN_DECORATION
+000010D4                           108      
+000010D4  103C 000E                109      MOVE.B  #14,D0              *Print null terminated string
+000010D8                           110      
+000010D8  43F9 000013FF            111      LEA     HUD_NAME,A1         *Load 'NAME: ' text
+000010DE  4E4F                     112      TRAP    #15
+000010E0                           113      
+000010E0  43F9 00006003            114      LEA     PLAYER_NAME,A1      *Load player name EQU
+000010E6  4E4F                     115      TRAP    #15
+000010E8                           116      
+000010E8  43F9 00001407            117      LEA     HUD_HEALTH,A1       *Load 'HEALTH: ' text
+000010EE  4E4F                     118      TRAP    #15
+000010F0                           119      
+000010F0  103C 0003                120      MOVE.B  #3,D0               *Print decimal number
+000010F4                           121      
+000010F4  1239 00006000            122      MOVE.B  PLAYER_HEALTH,D1    *Dereference player health EQU to D1
+000010FA  4E4F                     123      TRAP    #15
+000010FC                           124      
+000010FC  103C 000E                125      MOVE.B  #14,D0              *Print null terminated string
+00001100                           126      
+00001100  43F9 00001413            127      LEA     HUD_COINS,A1        *Load 'COINS: ' text
+00001106  4E4F                     128      TRAP    #15
+00001108                           129      
+00001108  103C 0003                130      MOVE.B  #3,D0               *Print decimal number
+0000110C                           131      
+0000110C  1239 00006001            132      MOVE.B  PLAYER_COINS,D1     *Dereference player coins EQU to D1
+00001112  4E4F                     133      TRAP    #15
+00001114                           134      
+00001114  103C 000E                135      MOVE.B  #14,D0              *Print null terminated string
+00001118  43F9 000013B4            136      LEA     CRLF,A1
+0000111E  4E4F                     137      TRAP    #15
+00001120                           138      
+00001120  6100 025C                139      BSR     SCREEN_DECORATION
+00001124                           140      
+00001124  4E75                     141      RTS
+00001126                           142      
+00001126                           143  INTRODUCTION:
+00001126                           144      
+00001126  4E75                     145      RTS
+00001128                           146      
+00001128                           147  OUTSIDE_TOWN:
+00001128                           148  
+00001128  43F9 00001E4A            149      LEA     ART_OUTSIDE_TOWN,A1     *Load and display ASCII art
+0000112E  103C 000D                150      MOVE.B  #13, D0
+00001132  4E4F                     151      TRAP    #15
+00001134                           152      
+00001134  43F9 0000185C            153      LEA     MSG_OUTSIDE_TOWN,A1     *Display description of area
+0000113A  4E4F                     154      TRAP    #15
+0000113C                           155      
+0000113C  103C 0004                156      MOVE.B  #4,D0                   *Take user input       
+00001140  4E4F                     157      TRAP    #15
+00001142                           158      
+00001142                           159      *Branch based on input
+00001142  B27C 0001                160      CMP     #1,D1
+00001146  6700 000C                161      BEQ     INSIDE_TOWN
+0000114A                           162      
+0000114A  B27C 0002                163      CMP     #2,D1
+0000114E  6700 0196                164      BEQ     MOVEMENT
+00001152                           165      
+00001152  4E75                     166      RTS
+00001154                           167  
+00001154                           168  INSIDE_TOWN:
+00001154                           169  
+00001154  13FC 0003 00006043       170      MOVE.B  #3,GAME_STATE       *Set game state to IN TOWN
+0000115C                           171      
+0000115C  43F9 00002260            172      LEA     ART_INSIDE_TOWN,A1  *Load and display ASCII art
+00001162  103C 000D                173      MOVE.B  #13, D0
+00001166  4E4F                     174      TRAP    #15
+00001168                           175      
+00001168  43F9 000018DE            176      LEA     MSG_INSIDE_TOWN,A1  *Display description of area
+0000116E  103C 000D                177      MOVE.B  #13, D0
+00001172  4E4F                     178      TRAP    #15
+00001174                           179      
+00001174  103C 0004                180      MOVE.B  #4,D0               *Take user input
+00001178  4E4F                     181      TRAP    #15
+0000117A                           182      
+0000117A                           183      *Branch based on input
+0000117A  B27C 0001                184      CMP     #1, D1
+0000117E  6700 001A                185      BEQ     ITEM_SHOP
+00001182                           186      
+00001182  B27C 0002                187      CMP     #2, D1
+00001186  6700 00BA                188      BEQ     WEAPON_SHOP
+0000118A                           189  
+0000118A  B27C 0003                190      CMP     #3, D1
+0000118E  6700 014C                191      BEQ     ART_SHOP
+00001192                           192  
+00001192  B27C 0004                193      CMP     #4, D1
+00001196  6790                     194      BEQ     OUTSIDE_TOWN
+00001198                           195  
+00001198                           196    
+00001198  4E75                     197      RTS
+0000119A                           198      
+0000119A                           199  ITEM_SHOP:
+0000119A                           200  
+0000119A  6100 FF2A                201      BSR     RENDER
+0000119E                           202  
+0000119E  13FC 0004 00006043       203      MOVE.B  #4,GAME_STATE       *Set game state to ITEM SHOP
+000011A6                           204      
+000011A6  43F9 00001A15            205      LEA     MSG_ITEM_SHOP,A1    *Display description of area
+000011AC  103C 000E                206      MOVE.B  #14,D0
+000011B0  4E4F                     207      TRAP    #15
+000011B2                           208      
+000011B2  103C 0004                209      MOVE.B  #4,D0               *Take user input
+000011B6  4E4F                     210      TRAP    #15
+000011B8                           211      
+000011B8                           212      *Branch based on input
+000011B8  B23C 0000                213      CMP.B   #0, D1              *If 0, return to town. Otherwise, continue to buy potions
+000011BC  6796                     214      BEQ     INSIDE_TOWN
+000011BE                           215      
+000011BE  1601                     216      MOVE.B  D1,D3               *Copy value of D1 to D3, so it can be used as an interation counter
+000011C0  6E00 0006                217      BGT     BUY_POTION
+000011C4                           218      
+000011C4  6000 FECE                219      BRA     GAME_LOOP
+000011C8                           220      
+000011C8                           221  BUY_POTION:
+000011C8                           222  
+000011C8  0C39 000F 00006001       223      CMP.B   #15,PLAYER_COINS    *Compares decimal 15 to player coins
+000011D0  6C00 0006                224      BGE     POTION_SUCCESS      *if player coins >= 15, buy is successful
+000011D4  6D00 003E                225      BLT     POTION_FAIL         *else, go to fail
+000011D8                           226      
+000011D8                           227  POTION_SUCCESS:
+000011D8                           228  
+000011D8  5303                     229      SUB.B   #1,D3               *D3 stores number of potions player wants to buy, we will use this as an iteration count
+000011DA  0439 000F 00006001       230      SUB.B   #15,PLAYER_COINS    *Remove 15 coins from player
+000011E2                           231      
+000011E2  5239 00006002            232      ADD.B   #1,PLAYER_POTIONS   *Give the player a potion!
+000011E8                           233      
+000011E8  B63C 0000                234      CMP.B   #0,D3               *if 0 < D3, recursively loop through buy potion
+000011EC  6EDA                     235      BGT     BUY_POTION
+000011EE                           236      
+000011EE  43F9 00001D2A            237      LEA     MSG_POTION_SUCCESS0,A1  *Load start of purchase success message
+000011F4  103C 000E                238      MOVE.B  #14,D0
+000011F8  4E4F                     239      TRAP    #15
+000011FA                           240      
+000011FA  103C 0003                241      MOVE.B  #3,D0                   *Display number of potions bought
+000011FE  4E4F                     242      TRAP    #15
+00001200                           243      
+00001200  43F9 00001D4C            244      LEA     MSG_POTION_SUCCESS1,A1  *Load end of purchase success message
+00001206  103C 000E                245      MOVE.B  #14,D0
+0000120A  4E4F                     246      TRAP    #15
+0000120C                           247      
+0000120C  6100 017E                248      BSR     PRESS_ENTER             *Press enter to continue
+00001210                           249      
+00001210  4EB8 119A                250      JSR     ITEM_SHOP               *Jump back to item shop
+00001214                           251  
+00001214                           252  POTION_FAIL:
+00001214                           253  
+00001214  43F9 00001D57            254      LEA     MSG_POTION_FAIL0,A1 *Load start of purchase fail message
+0000121A  103C 000E                255      MOVE.B  #14,D0
+0000121E  4E4F                     256      TRAP    #15
+00001220                           257      
+00001220  103C 0003                258      MOVE.B  #3,D0               *Display value of D1 (this will be number potions player attempted to buy)
+00001224  4E4F                     259      TRAP    #15
+00001226                           260      
+00001226  43F9 00001D74            261      LEA     MSG_POTION_FAIL1,A1 *Load end of purchase fail message
+0000122C  103C 000E                262      MOVE.B  #14,D0
+00001230  4E4F                     263      TRAP    #15
+00001232                           264      
+00001232  9203                     265      SUB.B   D3,D1               *Take away remainder from original number, leaving total num bought
+00001234  103C 0003                266      MOVE.B  #3,D0               *Display total bought
+00001238  4E4F                     267      TRAP    #15
+0000123A                           268      
+0000123A  6100 0150                269      BSR     PRESS_ENTER         *Press enter to continue
+0000123E                           270      
+0000123E  4EB8 119A                271      JSR     ITEM_SHOP           *Jump back to item shop
+00001242                           272  
+00001242                           273  
+00001242                           274  WEAPON_SHOP:
+00001242                           275  
+00001242  6100 FE82                276      BSR     RENDER
+00001246                           277  
+00001246  13FC 0005 00006043       278      MOVE.B  #5,GAME_STATE       *Set game state to WEAPON SHOP
+0000124E                           279      
+0000124E  43F9 00001BB8            280      LEA     MSG_WEAPON_SHOP,A1  *Display description of area
+00001254  103C 000D                281      MOVE.B  #13,D0
+00001258  4E4F                     282      TRAP    #15
+0000125A                           283      
+0000125A  103C 0004                284      MOVE.B  #4,D0               *Take user input
+0000125E  4E4F                     285      TRAP    #15
+00001260                           286      
+00001260                           287      *Branch based on input
+00001260  B27C 0000                288      CMP     #0, D1
+00001264  6700 FEEE                289      BEQ     INSIDE_TOWN
+00001268                           290      
+00001268  B27C 0001                291      CMP     #1, D1
+0000126C  6700 0004                292      BEQ     BUY_SWORD
+00001270                           293      
+00001270  60D0                     294      BRA     WEAPON_SHOP
+00001272                           295      
+00001272                           296  BUY_SWORD:
+00001272                           297  
+00001272  0C39 0001 00006045       298      CMP.B   #1,PLAYER_HAS_SWORD     *checks if player has already bought the sword
+0000127A  6700 0016                299      BEQ     ALREADY_OWN_SWORD
+0000127E                           300      
+0000127E  0C39 001E 00006001       301      CMP.B   #30,(PLAYER_COINS)      *check if player has enough coins
+00001286  6E00 001E                302      BGT     SWORD_SUCCESS
+0000128A  6F00 003C                303      BLE     SWORD_FAIL 
+0000128E                           304  
+0000128E  4EB8 1242                305      JSR     WEAPON_SHOP  
+00001292                           306  
+00001292                           307  ALREADY_OWN_SWORD:
+00001292                           308  
+00001292  43F9 00001DFD            309      LEA     MSG_SWORD_FAIL,A1  *Tells player they already own a sword
+00001298  103C 000D                310      MOVE.B  #13,D0
+0000129C  4E4F                     311      TRAP    #15
+0000129E                           312      
+0000129E  6100 00EC                313      BSR     PRESS_ENTER
+000012A2                           314      
+000012A2  4EB8 1242                315      JSR     WEAPON_SHOP
+000012A6                           316     
+000012A6                           317  SWORD_SUCCESS:
+000012A6                           318  
+000012A6  0439 001E 00006001       319      SUB.B   #30,PLAYER_COINS            *Take 30 coins away from player
+000012AE  5239 00006045            320      ADD.B   #1,PLAYER_HAS_SWORD         *Mark that player has sword
+000012B4                           321  
+000012B4  43F9 00001D95            322      LEA     MSG_PURCHASE_SUCCESS,A1     *Show success message
+000012BA  103C 000D                323      MOVE.B  #13,D0          
+000012BE  4E4F                     324      TRAP    #15
+000012C0                           325      
+000012C0  6100 00CA                326      BSR     PRESS_ENTER                 *Press enter to continue
+000012C4                           327      
+000012C4  4EB8 1242                328      JSR     WEAPON_SHOP                 *Jump back to weapon shop
+000012C8                           329      
+000012C8                           330  SWORD_FAIL:   
+000012C8                           331  
+000012C8  43F9 00001DAE            332      LEA     MSG_PURCHASE_FAIL,A1        *Show fail message
+000012CE  103C 000D                333      MOVE.B  #13,D0      
+000012D2  4E4F                     334      TRAP    #15
+000012D4                           335      
+000012D4  6100 00B6                336      BSR     PRESS_ENTER                 *press enter to continue
+000012D8                           337      
+000012D8  4EB8 1242                338      JSR     WEAPON_SHOP                 *Jump back to weapon shop
+000012DC                           339      
+000012DC                           340  ART_SHOP:
+000012DC                           341       
+000012DC  13FC 0006 00006043       342      MOVE.B  #6,GAME_STATE       *Set game state to ART SHOP
+000012E4  4E75                     343      RTS
+000012E6                           344      
+000012E6                           345  MOVEMENT:              
+000012E6                           346  
+000012E6  13FC 0001 00006043       347      MOVE.B  #1,GAME_STATE       *Set game state to TRAVELLING
+000012EE                           348      
+000012EE  43F9 00003187            349      LEA     msg_instructions,A1     *Tells player to type 1-4 to move NSEW
+000012F4  103C 000D                350      MOVE.B  #13,D0
+000012F8  4E4F                     351      TRAP    #15
+000012FA                           352      
+000012FA  103C 0004                353      MOVE.B  #4,D0                   *Take in number from keyboard
+000012FE  4E4F                     354      TRAP    #15
+00001300                           355      
+00001300  B27C 0001                356      CMP     #1,D1                   *Check number and branch to relevant SR
+00001304  6700 0020                357      BEQ     north
+00001308  B27C 0002                358      CMP     #2,D1
+0000130C  6700 002A                359      BEQ     south
+00001310  B27C 0003                360      CMP     #3,D1
+00001314  6700 0034                361      BEQ     east
+00001318  B27C 0004                362      CMP     #4,D1
+0000131C  6700 003E                363      BEQ     west
+00001320                           364      
+00001320  6100 004C                365      BSR     invalid
+00001324                           366      
+00001324  4E75                     367      RTS
+00001326                           368  
+00001326                           369  NORTH:
+00001326                           370      
+00001326  43F9 000031C8            371      LEA     MSG_NORTH,A1
+0000132C  103C 000D                372      MOVE.B  #13,D0
+00001330  4E4F                     373      TRAP    #15
+00001332                           374      
+00001332  6100 0058                375      BSR     PRESS_ENTER
+00001336                           376      
+00001336  4E75                     377      RTS
+00001338                           378      
+00001338                           379  SOUTH:
+00001338                           380      
+00001338  43F9 000031DD            381      LEA     MSG_SOUTH,A1
+0000133E  103C 000D                382      MOVE.B  #13,D0 
+00001342  4E4F                     383      TRAP    #15
+00001344                           384      
+00001344  6100 0046                385      BSR     PRESS_ENTER
+00001348                           386      
+00001348  4E75                     387      RTS
+0000134A                           388      
+0000134A                           389  EAST:
+0000134A                           390      
+0000134A  43F9 000031F2            391      LEA     MSG_EAST,A1
+00001350  103C 000D                392      MOVE.B  #13,D0
+00001354  4E4F                     393      TRAP    #15
+00001356                           394      
+00001356  6100 0034                395      BSR     PRESS_ENTER
+0000135A                           396      
+0000135A  4E75                     397      RTS
+0000135C                           398      
+0000135C                           399  WEST:
+0000135C                           400      
+0000135C  43F9 00003206            401      LEA     MSG_WEST,A1
+00001362  103C 000D                402      MOVE.B  #13,D0
+00001366  4E4F                     403      TRAP    #15
+00001368                           404      
+00001368  6100 0022                405      BSR     PRESS_ENTER
+0000136C                           406      
+0000136C  4E75                     407      RTS
+0000136E                           408      
+0000136E                           409  INVALID:
+0000136E  43F9 0000321A            410      LEA     MSG_INVALID,A1
+00001374  103C 000D                411      MOVE.B  #13,D0
+00001378  4E4F                     412      TRAP    #15
+0000137A  6100 FF6A                413      BSR     MOVEMENT
+0000137E                           414      
+0000137E                           415      
+0000137E                           416  SCREEN_DECORATION:  *Draws decorative line to screen
+0000137E                           417  
+0000137E  43F9 000013B7            418      LEA     SCREENLINE,A1
+00001384  103C 000D                419      MOVE.B  #13,D0
+00001388  4E4F                     420      TRAP    #15
+0000138A  4E75                     421      RTS
+0000138C                           422      
+0000138C                           423  PRESS_ENTER:    *Displays the prompt 'Press enter to continue' on-screen
+0000138C                           424  
+0000138C  43F9 0000141E            425      LEA     MSG_ENTER,A1
+00001392  103C 000D                426      MOVE.B  #13,D0 
+00001396  4E4F                     427      TRAP    #15
+00001398                           428      
+00001398  103C 0005                429      MOVE.B  #5,D0
+0000139C  4E4F                     430      TRAP    #15
+0000139E                           431      
+0000139E  4E75                     432      RTS
+000013A0                           433  
+000013A0                           434  CLEAR_SCREEN:
+000013A0                           435   
+000013A0  103C 000B                436      move.b  #11,D0      clear screen
+000013A4  323C FF00                437      move.w  #$ff00,D1
+000013A8  4E4F                     438      trap    #15
+000013AA                           439      
+000013AA  323C 0000                440      move.w  #0000,D1    *clear value of D1
+000013AE  4E75                     441      rts
+000013B0                           442      
+000013B0                           443  EXIT:
+000013B0                           444  
+000013B0  FFFF FFFF                445      SIMHALT 
+000013B4                           446      
+000013B4= 0D 0A 00                 447  CRLF:           DC.B    $0D,$0A,0
+000013B7                           448  
+000013B7= 7E 2A 7E 2A 7E 2A ...    449  SCREENLINE:     DC.B    '~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~',0
+000013FF                           450  
+000013FF= 09 4E 41 4D 45 3A ...    451  HUD_NAME:       DC.B    $09,'NAME: ',0
+00001407= 09 09 09 48 45 41 ...    452  HUD_HEALTH:     DC.B    $09,$09,$09,'HEALTH: ',0
+00001413= 09 09 09 43 4F 49 ...    453  HUD_COINS:      DC.B    $09,$09,$09,'COINS: ',0
+0000141E                           454  
+0000141E= 0D 0A 50 72 65 73 ...    455  MSG_ENTER:      DC.B    $0D,$0A,'Press Enter to Continue',0  
+00001438                           456  
+00001438= 57 68 61 74 20 69 ...    457  MSG_ENTER_NAME: DC.B    'What is your name?',0
+0000144B                           458  
+0000144B= 48 69 2C 20 00           459  MSG_GREETING0:      DC.B    'Hi, ',0
+00001450= 3B 20 77 65 6C 63 ...    460  MSG_GREETING1:      DC.B    '; welcome to Avalon!',0
+00001465                           461                      
+00001465= 20 20 20 20 5F 5F ...    462  MSG_TITLE:          DC.B    '    ______________________________________________________________________',$0D,$0A
+000014B1= 20 20 20 3D 3D 3D ...    463                      DC.B    '   ========================================================================',$0D,$0A
+000014FE= 20 20 7C 20 20 20 ...    464                      DC.B    '  |                                                                        |',$0D,$0A
+0000154C= 20 20 7C 20 20 20 ...    465                      DC.B    '  |      :::     :::     :::     :::     :::        ::::::::  ::::    :::  |',$0D,$0A
+0000159A= 20 20 7C 20 20 20 ...    466                      DC.B    '  |    :+: :+:   :+:     :+:   :+: :+:   :+:       :+:    :+: :+:+:   :+:  |',$0D,$0A
+000015E8= 20 20 7C 20 20 20 ...    467                      DC.B    '  |   +:+   +:+  +:+     +:+  +:+   +:+  +:+       +:+    +:+ :+:+:+  +:+  |',$0D,$0A
+00001636= 20 20 7C 20 20 2B ...    468                      DC.B    '  |  +#++:++#++: +#+     +:+ +#++:++#++: +#+       +#+    +:+ +#+ +:+ +#+  |',$0D,$0A
+00001684= 20 20 7C 20 20 2B ...    469                      DC.B    '  |  +#+     +#+  +#+   +#+  +#+     +#+ +#+       +#+    +#+ +#+  +#+#+#  |',$0D,$0A 
+000016D2= 20 20 7C 20 20 23 ...    470                      DC.B    '  |  #+#     #+#   #+#+#+#   #+#     #+# #+#       #+#    #+# #+#   #+#+#  |',$0D,$0A 
+00001720= 20 20 7C 20 20 23 ...    471                      DC.B    '  |  ###     ###     ###     ###     ### ########## ########  ###    ####  |',$0D,$0A
+0000176E= 20 20 7C 20 20 20 ...    472                      DC.B    '  |                                                                        |',$0D,$0A
+000017BC= 20 20 20 3D 3D 3D ...    473                      DC.B    '   ========================================================================',$0D,$0A
+00001809= 20 20 20 20 22 22 ...    474                      DC.B    '    """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""',$0D,$0A,$0D,$0A,$0D,$0A,$0D,$0A,0
+0000185C                           475                      
+0000185C= 0D 0A 0D 0A 59 6F ...    476  MSG_OUTSIDE_TOWN:   DC.B    $0D,$0A,$0D,$0A,'You find yourself outside a town; would you like to enter, or explore outside?'
+000018AE= 0D 0A 0D 0A              477                      DC.B    $0D,$0A,$0D,$0A 
+000018B2= 50 72 65 73 73 20 ...    478                      DC.B    'Press 1 to ENTER TOWN'
+000018C7= 0D 0A 0D 0A              479                      DC.B    $0D,$0A,$0D,$0A
+000018CB= 50 72 65 73 73 20 ...    480                      DC.B    'Press 2 to EXPLORE',0
+000018DE                           481                      
+000018DE= 0D 0A 0D 0A 59 6F ...    482  MSG_INSIDE_TOWN:    DC.B    $0D,$0A,$0D,$0A,'You look around and see that you are in a small medieval town, bustling'
+00001929= 0D 0A                    483                      DC.B    $0D,$0A
+0000192B= 77 69 74 68 20 70 ...    484                      DC.B    'with people. You see in front of you an ITEM shop and a WEAPON shop,'
+0000196F= 0D 0A                    485                      DC.B    $0D,$0A
+00001971= 61 6E 64 20 74 6F ...    486                      DC.B    'and to the right, a sign for an ARTIST.'
+00001998= 0D 0A 0D 0A              487                      DC.B    $0D,$0A,$0D,$0A
+0000199C= 50 72 65 73 73 20 ...    488                      DC.B    'Press 1 to enter ITEM SHOP'   
+000019B6= 0D 0A 0D 0A              489                      DC.B    $0D,$0A,$0D,$0A
+000019BA= 50 72 65 73 73 20 ...    490                      DC.B    'Press 2 to enter WEAPON SHOP'
+000019D6= 0D 0A 0D 0A              491                      DC.B    $0D,$0A,$0D,$0A
+000019DA= 50 72 65 73 73 20 ...    492                      DC.B    'Press 3 to go to ARTISTs house'
+000019F8= 0D 0A 0D 0A              493                      DC.B    $0D,$0A,$0D,$0A
+000019FC= 50 72 65 73 73 20 ...    494                      DC.B    'Press 4 to EXIT the city',0  
+00001A15                           495                      
+00001A15= 0D 0A 59 6F 75 20 ...    496  MSG_ITEM_SHOP:      DC.B    $0D,$0A,'You enter the item shop, and the owner greets you cheerfully:',$0D,$0A,$0D,$0A
+00001A58= 20 20 20 22 48 65 ...    497                      DC.B    '   "Hello my friend! Can I interest you in some potions?',$0D,$0A
+00001A92= 20 20 20 20 4F 72 ...    498                      DC.B    '    Or perhaps, some ... other potions? ... I will be honest,',$0D,$0A
+00001AD1= 20 20 20 20 49 20 ...    499                      DC.B    '    I do not have anything but potions here. But I can assure',$0D,$0A
+00001B10= 20 20 20 20 79 6F ...    500                      DC.B    '    you, they are of the highest quality! Mostly!"',$0D,$0A,$0D,$0A
+00001B46= 41 20 73 69 67 6E ...    501                      DC.B    'A sign on the wall reads "Potions: 15 coins". How many potions would you like?',$0D,$0A,$0D,$0A
+00001B98= 45 6E 74 65 72 20 ...    502                      DC.B    'Enter number [0 to exit shop]: ',0
+00001BB8                           503                      
+00001BB8= 0D 0A 59 6F 75 20 ...    504  MSG_WEAPON_SHOP:    DC.B    $0D,$0A,'You enter the weapon shop; the owner seems displeased.',$0D,$0A,$0D,$0A,$0D,$0A
+00001BF6= 20 20 20 22 53 77 ...    505                      DC.B    '   "Sword. 25 coins.", the owner grunts.',$0D,$0A,$0D,$0A
+00001C22= 20 20 20 22 4F 68 ...    506                      DC.B    '   "Oh. Do you have anything els--", you begin',$0D,$0A,$0D,$0A
+00001C54= 20 20 20 22 33 30 ...    507                      DC.B    '   "30 coins", he interrupts. You decide not to ask any more questions.',$0D,$0A,$0D,$0A,$0D,$0A
+00001CA1= 57 6F 75 6C 64 20 ...    508                      DC.B    'Would you like to buy a sword for 30 coins?',$0D,$0A,$0D,$0A
+00001CD0= 5B 31 5D 20 59 65 ...    509                      DC.B    '[1] Yes, support local business!',$0D,$0A
+00001CF2= 5B 30 5D 20 4E 6F ...    510                      DC.B    '[0] No thanks, I',$27,'d rather go pull one out of a stone.',$0D,$0A,0
+00001D2A                           511  MSG_ARTIST:
+00001D2A                           512  
+00001D2A= 0D 0A 0D 0A 59 6F ...    513  MSG_POTION_SUCCESS0:     DC.B   $0D,$0A,$0D,$0A,'You have successfully bought ',0
+00001D4C= 20 70 6F 74 69 6F ...    514  MSG_POTION_SUCCESS1:     DC.B   ' potion/s!',0
+00001D57                           515  
+00001D57= 0D 0A 0D 0A 53 6F ...    516  MSG_POTION_FAIL0:        DC.B   $0D,$0A,$0D,$0A,'Sorry, you can',$27,'t afford ',0
+00001D74= 20 70 6F 74 69 6F ...    517  MSG_POTION_FAIL1:        DC.B   ' potion/s. Instead, you bought: ',0
+00001D95                           518  
+00001D95= 0D 0A 50 75 72 63 ...    519  MSG_PURCHASE_SUCCESS:   DC.B    $0D,$0A,'Purchase successful!',$0D,$0A,0
+00001DAE= 0D 0A 0D 0A 49 27 ...    520  MSG_PURCHASE_FAIL:      DC.B    $0D,$0A,$0D,$0A,'I',$27,'m sorry, it doesn',$27,'t look like you have enough',$0D,$0A 
+00001DE3= 63 6F 69 6E 73 20 ...    521                          DC.B    'coins for this purchase',$0D,$0A,0
+00001DFD                           522  
+00001DFD= 0D 0A 59 6F 75 20 ...    523  MSG_SWORD_FAIL:         DC.B    $0D,$0A,'You already have one of those!',$0D,$0A
+00001E1F= 41 73 73 65 6D 62 ...    524                          DC.B    'Assembly 68k doesn',$27,'t support duel wielding',0
+00001E4A                           525  
+00001E4A= 20 20 20 20 20 20 ...    526  ART_OUTSIDE_TOWN    DC.B    '                                    |>>>',$0D,$0A 
+00001E74= 20 20 20 20 20 20 ...    527                      DC.B    '                                    |',$0D,$0A 
+00001E9B= 20 20 20 20 20 20 ...    528                      DC.B    '                      |>>>      _  _|_  _         |>>>',$0D,$0A 
+00001ED3= 20 20 20 20 20 20 ...    529                      DC.B    '                      |        |;| |;| |;|        |',$0D,$0A 
+00001F08= 20 20 20 20 20 20 ...    530                      DC.B    '                  _  _|_  _    \\.    .  /    _  _|_  _',$0D,$0A 
+00001F41= 20 20 20 20 20 20 ...    531                      DC.B    '                 |;|_|;|_|;|    \\:. ,  /    |;|_|;|_|;|',$0D,$0A 
+00001F7B= 20 20 20 20 20 20 ...    532                      DC.B    '                 \\..      /    ||;   . |    \\.    .  /',$0D,$0A 
+00001FB5= 20 20 20 20 20 20 ...    533                      DC.B    '                  \\.  ,  /     ||:  .  |     \\:  .  /',$0D,$0A 
+00001FEE= 20 20 20 20 20 20 ...    534                      DC.B    '                   ||:   |_   _ ||_ . _ | _   _||:   |',$0D,$0A 
+00002026= 20 20 20 20 20 20 ...    535                      DC.B    '                   ||:  .|||_|;|_|;|_|;|_|;|_|;||:.  |',$0D,$0A 
+0000205E= 20 20 20 20 20 20 ...    536                      DC.B    '                   ||:   ||.    .     .      . ||:  .|',$0D,$0A 
+00002096= 20 20 20 20 20 20 ...    537                      DC.B    '                   ||: . || .     . .   .  ,   ||:   |       \,/',$0D,$0A 
+000020D8= 20 20 20 20 20 20 ...    538                      DC.B    '                   ||:   ||:  ,  _______   .   ||: , |            /`\',$0D,$0A 
+0000211F= 20 20 20 20 20 20 ...    539                      DC.B    '                   ||:   || .   /+++++++\    . ||:   |',$0D,$0A 
+00002157= 20 20 20 20 20 20 ...    540                      DC.B    '                   ||:   ||.    |+++++++| .    ||: . |',$0D,$0A 
+0000218F= 20 20 20 20 20 20 ...    541                      DC.B    '                __ ||: . ||: ,  |+++++++|.  . _||_   |',$0D,$0A 
+000021C7= 20 20 20 20 20 20 ...    542                      DC.B    '       ____--`~    ;--~~__|.    |+++++__|----~    ~`---,           ___',$0D,$0A 
+0000220F= 2D 7E 2D 2D 7E 20 ...    543                      DC.B    '-~--~                  ~---__|,--~                   ~~----_____-~;   `~----~~',$0D,$0A,0  
+00002260                           544                      
+00002260= 20 20 20 20 20 20 ...    545  ART_INSIDE_TOWN     DC.B    '             )                     (',$0D,$0A
+00002286= 20 20 20 20 20 20 ...    546                      DC.B    '       [1]  (                 [2]   )                [3]',$0D,$0A
+000022C0= 20 20 20 20 5F 5F ...    547                      DC.B    '    ________[]_           _________[]_',$0D,$0A
+000022E8= 20 20 20 2F 5E 3D ...    548                      DC.B    '   /^=^-^-^=^-^\         /^~^~^~^~^~^~\         .^_________',$0D,$0A
+00002325= 20 20 2F 5E 2D 5E ...    549                      DC.B    '  /^-^-^-^-^-^-^\       /^ ^ ^  ^ ^ ^ ^\        ||Artist ->/',$0D,$0A
+00002363= 20 2F 5F 5F 5E 5F ...    550                      DC.B    ' /__^_^_^_^^_^_^_\     /_^_^_^^_^_^_^_^_\       ||""""""""',$0D,$0A   
+0000239F= 20 20 7C 20 20 2E ...    551                      DC.B    '  |  .==. ITEMs |       | WEAPONs.--.  |        ||',$0D,$0A
+000023D3= 5E 5E 7C 20 20 7C ...    552                      DC.B    '^^|  |LI|  [}{] |^^^^^^^| |[}{]| |[]|  |^^^^^^^^||^^^^',$0D,$0A
+0000240B= 38 26 7C 5F 5F 7C ...    553                      DC.B    '8&|__|__|_______|&8   8&|_+====+_|__|__|8&8&8&8\||/.:::::.',$0D,$0A
+00002447= 20 20 20 20 20 3D ...    554                      DC.B    '     =::=                        =::=             .::::::.',$0D,$0A
+00002483= 3D 3D 3D 3D 3D 3A ...    555                      DC.B    '=====::::========================::::====.:::::::::::::::::::.',$0D,$0A
+000024C3= 3A 3A 3A 3A 3A 3A ...    556                      DC.B    ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.',$0D,$0A
+00002501= 3D 2B 2D 2B 3D 2B ...    557                      DC.B    '=+-+=+-+=+-+=+-+=+-+=+-+=+-+=+-+=+-+=+|.::::::./+=+-+=+',$0D,$0A
+0000253A= 26 26 38 26 26 38 ...    558                      DC.B    '&&8&&8&&8&&8&&8&&8&&8&&8&&8&&8&&8&& +|.::::::./+',$0D,$0A 
+0000256C= 20 20 20 09 2C 2C ...    559                      DC.B    '       ,,      ,,,     ,      , 8& +|.::::::./+',$0D,$0A 
+0000259A= 20 20 2C 2C 2C 2C ...    560                      DC.B    '  ,,,,    ,,,         ,,,   ,, 8& +|.::::::./+',$0D,$0A
+000025CA= 3D 2B 2D 2B 3D 2B ...    561                      DC.B    '=+-+=+-+=+-+=+-+=+-+=+-+=+-+=+-+=+|.::::::./+',$0D,$0A
+000025F9= 5F 7C 5F 5F 5F 7C ...    562                      DC.B    '_|___|___|___|___|___|___|___|___|.::::::./+',$0D,$0A 
+00002627= 3A 3A 3A 3A 3A 3A ...    563                      DC.B    '::::::::::::::::::::::::::::::::::::::::::.',$0D,$0A
+00002654= 3A 3A 3A 3A 3A 3A ...    564                      DC.B    ':::::::::::::::::::::::::::::::::::::::::::.',0
+00002681                           565                  
+00002681= 20 20 20 20 20 20 ...    566  ART_PHIL:           DC.B        '                                    `-:+ooyyo+:-..```   '                                            
+000026B9= 20 20 20 20 20 20 ...    567                      DC.B        '                            `:/shhyyyhhhhyyysso+o+/:::-.`,',$0D,$0A                                
+000026F5= 20 20 20 20 20 20 ...    568                      DC.B        '                         `.:/+shyyyyydddhddhhhhysooossso::`',$0D,$0A                                    
+00002732= 20 20 20 20 20 20 ...    569                      DC.B        '                       ./+ossyhyyhhdmmdddmmmmmdmdhdhhhyyss/.',$0D,$0A                                   
+00002770= 20 20 20 20 20 20 ...    570                      DC.B        '                   -+syhhhddddddddmmNmddddmNmmNNmdhdddhys+.  ',$0D,$0A                                
+000027AF= 20 20 20 20 20 20 ...    571                      DC.B        '                   `:oydhdmNNNNmmmNmmmmmmdddddh+::/oshdmmmdys/',$0D,$0A                                  
+000027EF= 20 20 20 20 20 20 ...    572                      DC.B        '                 ./yhhhdmmNmmNNNNmmmmmmmmddhys-      .+hdmdhs+`',$0D,$0A                                 
+00002830= 20 20 20 20 20 20 ...    573                      DC.B        '                -+hddhddmmmmmNNNNNNNNmmdhhyo:.         `:sysss+`',$0D,$0A                                
+00002872= 20 20 20 20 20 20 ...    574                      DC.B        '             `/syhddddmmmmNNNNNNNNmmmmds+-`             `://ss+.',$0D,$0A                             
+000028B4= 20 20 20 20 20 20 ...    575                      DC.B        '           `syhdmmmmmmmNNNNNNNmdhyso/-`                  `.-/so` ',$0D,$0A                            
+000028F7= 20 20 20 20 20 20 ...    576                      DC.B        '            /dmNNNNNNmmNNNNNdho:.`                          `-+ys`',$0D,$0A                            
+0000293B= 20 20 20 20 20 20 ...    577                      DC.B        '            odNNNNNmmmNNNms/-`                               .+yh+ ',$0D,$0A                           
+00002980= 20 20 20 20 20 20 ...    578                      DC.B        '           omNNNNNdo+oo+.                                    -oss  ',$0D,$0A                         
+000029C5= 20 20 20 20 20 20 ...    579                      DC.B        '            odmmmmh.                                           /ss-',$0D,$0A                          
+00002A0A= 20 20 20 20 20 20 ...    580                      DC.B        '           +yhhdd-                                             /y+ ',$0D,$0A                         
+00002A4F= 20 20 20 20 20 20 ...    581                      DC.B        '           +hdyoo                                              -so`',$0D,$0A                         
+00002A94= 20 20 20 20 20 20 ...    582                      DC.B        '          +mNhs:                                   ````.-:-:::/++- ',$0D,$0A                        
+00002AD9= 20 20 20 20 20 20 ...    583                      DC.B        '          /NMmy`                               `-+o+++//:-:mmNhss/ ',$0D,$0A                        
+00002B1E= 20 20 20 20 20 20 ...    584                      DC.B        '          .mNmo                             -+o+:`         /M+  `` ',$0D,$0A                         
+00002B63= 20 20 20 20 20 20 ...    585                      DC.B        '            ymmo                 ```.-:-`..:h+.              h-    ',$0D,$0A                          
+00002BA8= 20 20 20 20 20 20 ...    586                      DC.B        '            -dmy         `./+o+++++//-/mMNhyd/               y`    ',$0D,$0A                          
+00002BED= 20 20 20 20 20 20 ...    587                      DC.B        '            sdh-    ./sho/.`          /N-   o-            .+/      ',$0D,$0A                         
+00002C32= 20 20 20 20 20 20 ...    588                      DC.B        '            `hdyooymMNM/              -d     :+-     .-:::.        ',$0D,$0A                         
+00002C77= 20 20 20 20 20 20 ...    589                      DC.B        '                .ohdyyhhdNo              +/       .:---`           ',$0D,$0A                           
+00002CBC= 20 20 20 20 20 20 ...    590                      DC.B        '                 ``    `:h-           .//                          ',$0D,$0A                           
+00002D01= 20 20 20 20 20 20 ...    591                      DC.B        '                         `+/-..-::::--`                            ',$0D,$0A                           
+00002D46= 20 20 20 20 20 20 ...    592                      DC.B        '                            `.--.`               .---------....``  ',$0D,$0A                            
+00002D8B= 20 20 20 20 20 20 ...    593                      DC.B        '                                        `:+syhdmNNNNNNNmmmddhys:`  ',$0D,$0A                          
+00002DD0= 20 20 20 20 20 20 ...    594                      DC.B        '                                    -/shmNMNNNNNNMNNNNMMMMMNNmh+`  ',$0D,$0A                          
+00002E15= 20 20 20 20 20 20 ...    595                      DC.B        '                                .+hmNNNMMMNmdyyyssossydNMMMNy:`    ',$0D,$0A                         
+00002E5A= 20 20 20 20 20 20 ...    596                      DC.B        '                                `+dNMMMNdyo:.```        ``.-/:`    ',$0D,$0A                           
+00002E9F= 20 20 20 20 20 20 ...    597                      DC.B        '                            `+hNMMMN/.`                            ',$0D,$0A                         
+00002EE4= 20 20 20 20 20 20 ...    598                      DC.B        '                            `omNNNhs/         ``......`            ',$0D,$0A                          
+00002F29= 20 20 20 20 20 20 ...    599                      DC.B        '                            `://.`       -osyhddmmmmmd/            ',$0D,$0A                         
+00002F6E= 20 20 20 20 20 20 ...    600                      DC.B        '                                        /hmNNNNMMMMMMNs.           ',$0D,$0A                         
+00002FB3= 20 20 20 20 20 20 ...    601                      DC.B        '                                        /mNNMMMMMMMMMmo.           ',$0D,$0A                         
+00002FF8= 20 20 20 20 20 20 ...    602                      DC.B        '                                        `+hmNMMMMMMMMm+`           ',$0D,$0A                         
+0000303D= 20 20 20 20 20 20 ...    603                      DC.B        '                                          .odMMMMMMMNh:            ',$0D,$0A                         
+00003082= 20 20 20 20 20 20 ...    604                      DC.B        '                                           `/dNMMMMMm+`            ',$0D,$0A                         
+000030C7= 20 20 20 20 20 20 ...    605                      DC.B        '                                             :yNMNMNy.             ',$0D,$0A                         
+0000310C= 20 20 20 20 20 20 ...    606                      DC.B        '                                                -oyys+-            ',$0D,$0A                           
+00003151= 20 20 20 20 20 20 ...    607                      DC.B        '                                                  `` ',0
+00003187                           608  
+00003187= 45 6E 74 65 72 3A        609  msg_instructions    dc.b    'Enter:'
+0000318D= 0D 0A                    610                      dc.b    $0D,$0A
+0000318F= 31 20 74 6F 20 67 ...    611                      dc.b    '1 to go North'
+0000319C= 0D 0A                    612                      dc.b    $0D,$0A
+0000319E= 32 20 74 6F 20 67 ...    613                      dc.b    '2 to go South'
+000031AB= 0D 0A                    614                      dc.b    $0D,$0A
+000031AD= 33 20 74 6F 20 67 ...    615                      dc.b    '3 to go East'
+000031B9= 0D 0A                    616                      dc.b    $0D,$0A
+000031BB= 34 20 74 6F 20 67 ...    617                      dc.b    '4 to go West',0
+000031C8= 0D 0A                    618  msg_north           dc.b    $0D,$0A
+000031CA= 59 6F 75 20 74 72 ...    619                      dc.b    'You travel NORTH',$0D,$0A,0
+000031DD= 0D 0A                    620  msg_south           dc.b    $0D,$0A
+000031DF= 59 6F 75 20 74 72 ...    621                      dc.b    'You travel SOUTH',$0D,$0A,0
+000031F2= 0D 0A                    622  msg_east            dc.b    $0D,$0A
+000031F4= 59 6F 75 20 74 72 ...    623                      dc.b    'You travel EAST',$0D,$0A,0
+00003206= 0D 0A                    624  msg_west            dc.b    $0D,$0A
+00003208= 59 6F 75 20 74 72 ...    625                      dc.b    'You travel WEST',$0D,$0A,0
+0000321A= 0D 0A                    626  msg_invalid         dc.b    $0D,$0A
+0000321C= 49 20 61 6D 20 73 ...    627                      dc.b    'I am sorry, that was an invalid entry',0
+00003242= 0D 0A                    628                      dc.b    $0D,$0A
+00003244                           629                    
+00003244                           630  
+00003244  =00006000                631  PLAYER_HEALTH:      EQU     $6000 *store player health
+00003244  =00006001                632  PLAYER_COINS:       EQU     $6001 *store player coins num
+00003244  =00006002                633  PLAYER_POTIONS      EQU     $6002 *store player potions
+00003244  =00006003                634  PLAYER_NAME:        EQU     $6003 *store player name
+00003244                           635  
+00003244                           636  *64 bytes skipped for player name, to be safe
+00003244  =00006043                637  GAME_STATE:         EQU     $6043 *track gamestate
+00003244  =00006044                638  DIALOGUE_STEP:      EQU     $6044 *tracks progress through dialogue
+00003244  =00006045                639  PLAYER_HAS_SWORD:   EQU     $6045 *1 if player has sword, 0 otherwise
+00003244                           640  
+00003244                           641  
+00003244                           642      END    START
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ALREADY_OWN_SWORD   1292
+ART_INSIDE_TOWN     2260
+ART_OUTSIDE_TOWN    1E4A
+ART_PHIL            2681
+ART_SHOP            12DC
+BUY_POTION          11C8
+BUY_SWORD           1272
+CLEAR_SCREEN        13A0
+CRLF                13B4
+DIALOGUE_STEP       6044
+DISPLAY_HUD         10D0
+EAST                134A
+EXIT                13B0
+GAME_LOOP           1094
+GAME_STATE          6043
+HUD_COINS           1413
+HUD_HEALTH          1407
+HUD_NAME            13FF
+INPUT_NAME          1056
+INSIDE_TOWN         1154
+INTRODUCTION        1126
+INVALID             136E
+ITEM_SHOP           119A
+MOVEMENT            12E6
+MSG_ARTIST          1D2A
+MSG_EAST            31F2
+MSG_ENTER           141E
+MSG_ENTER_NAME      1438
+MSG_GREETING0       144B
+MSG_GREETING1       1450
+MSG_INSIDE_TOWN     18DE
+MSG_INSTRUCTIONS    3187
+MSG_INVALID         321A
+MSG_ITEM_SHOP       1A15
+MSG_NORTH           31C8
+MSG_OUTSIDE_TOWN    185C
+MSG_POTION_FAIL0    1D57
+MSG_POTION_FAIL1    1D74
+MSG_POTION_SUCCESS0  1D2A
+MSG_POTION_SUCCESS1  1D4C
+MSG_PURCHASE_FAIL   1DAE
+MSG_PURCHASE_SUCCESS  1D95
+MSG_SOUTH           31DD
+MSG_SWORD_FAIL      1DFD
+MSG_TITLE           1465
+MSG_WEAPON_SHOP     1BB8
+MSG_WEST            3206
+NORTH               1326
+OUTSIDE_TOWN        1128
+PLAYER_COINS        6001
+PLAYER_HAS_SWORD    6045
+PLAYER_HEALTH       6000
+PLAYER_NAME         6003
+PLAYER_POTIONS      6002
+POTION_FAIL         1214
+POTION_SUCCESS      11D8
+PRESS_ENTER         138C
+PRINT_TITLE         1040
+RENDER              10C6
+SCREENLINE          13B7
+SCREEN_DECORATION   137E
+SOUTH               1338
+START               1000
+SWORD_FAIL          12C8
+SWORD_SUCCESS       12A6
+TAKE_INPUT          109E
+WEAPON_SHOP         1242
+WEST                135C
