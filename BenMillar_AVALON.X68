@@ -114,6 +114,16 @@ DISPLAY_HUD:
     LEA     PLAYER_NAME,A1      *Load player name EQU
     TRAP    #15
     
+    LEA     HUD_POTIONS,A1       *Load 'POTIONS: ' text
+    TRAP    #15
+    
+    MOVE.B  #3,D0               *Print decimal number
+    
+    MOVE.B  PLAYER_POTIONS,D1   *Dereference player potion num EQU to D1
+    TRAP    #15
+    
+    MOVE.B  #14,D0              *Print null terminated string
+    
     LEA     HUD_HEALTH,A1       *Load 'HEALTH: ' text
     TRAP    #15
     
@@ -338,9 +348,46 @@ SWORD_FAIL:
     JSR     WEAPON_SHOP                 *Jump back to weapon shop
     
 ART_SHOP:
+
+    BSR     RENDER              *Clear screen, draw HUD
      
     MOVE.B  #6,GAME_STATE       *Set game state to ART SHOP
-    RTS
+    
+    LEA     MSG_ARTIST,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  #4,D0               *Take user input
+    TRAP    #15
+    
+    *Branch based on input
+    CMP     #0, D1
+    BEQ     INSIDE_TOWN
+    
+    *Otherwise, if not 0
+    BSR     RENDER
+    
+    LEA     MSG_ARTIST2,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    BSR     PRESS_ENTER
+    
+    LEA     ART_PHIL,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    BSR     PRESS_ENTER
+    
+    BSR     RENDER
+    
+    LEA     MSG_ARTIST3,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    BSR     PRESS_ENTER
+    
+    JSR     INSIDE_TOWN
     
 MOVEMENT:              
 
@@ -449,8 +496,9 @@ CRLF:           DC.B    $0D,$0A,0
 SCREENLINE:     DC.B    '~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~',0
 
 HUD_NAME:       DC.B    $09,'NAME: ',0
-HUD_HEALTH:     DC.B    $09,$09,$09,'HEALTH: ',0
-HUD_COINS:      DC.B    $09,$09,$09,'COINS: ',0
+HUD_POTIONS     DC.B    $09,$09,'POTIONS: ',0
+HUD_HEALTH:     DC.B    $09,'HEALTH: ',0
+HUD_COINS:      DC.B    $09,'COINS: ',0
 
 MSG_ENTER:      DC.B    $0D,$0A,'Press Enter to Continue',0  
 
@@ -506,9 +554,40 @@ MSG_WEAPON_SHOP:    DC.B    $0D,$0A,'You enter the weapon shop; the owner seems 
                     DC.B    '   "Oh. Do you have anything els--", you begin',$0D,$0A,$0D,$0A
                     DC.B    '   "30 coins", he interrupts. You decide not to ask any more questions.',$0D,$0A,$0D,$0A,$0D,$0A
                     DC.B    'Would you like to buy a sword for 30 coins?',$0D,$0A,$0D,$0A
-                    DC.B    '[1] Yes, support local business!',$0D,$0A
-                    DC.B    '[0] No thanks, I',$27,'d rather go pull one out of a stone.',$0D,$0A,0
-MSG_ARTIST:
+                    DC.B    '[1] Yes, support local business! [BUY]',$0D,$0A
+                    DC.B    '[0] No thanks, I',$27,'d rather go pull one out of a stone. [LEAVE]',$0D,$0A,0
+
+MSG_ARTIST:         DC.B    $0D,$0A,'You walk into a dimly lit room, littered with empty kegs of craft ale.',$0D,$0A
+                    DC.B    'The walls are covered with dozens of portraits ... And so is the floor,',$0D,$0A
+                    DC.B    'for that matter.',$0D,$0A,$0D,$0A
+                    DC.B    '   "Hello?", you call out',$0D,$0A,$0D,$0A
+                    DC.B    '   "Hello!", responds one of the paintings',$0D,$0A,$0D,$0A
+                    DC.B    'You become acutely aware that it is not in fact a painting, rather a man',$0D,$0A
+                    DC.B    'covered in paint, as he steps forward from the wall he was leaning against.',$0D,$0A,$0D,$0A
+                    DC.B    '   "How lovely to see you!", he exclaims. "I',$27,'m the town artist!"',$0D,$0A,$0D,$0A
+                    DC.B    '   ...',$0D,$0A,$0D,$0A
+                    DC.B    '   "We have a very well funded arts council, for a small medieval town.",',$0D,$0A
+                    DC.B    '   He adds, sensing your confusion',$0D,$0A,$0D,$0A
+                    DC.B    '   "I specialise in portraits; would you like to get one done?"',$0D,$0A,$0D,$0A
+                    DC.B    '[1] Why yes, I',$27,'d love to!',$0D,$0A
+                    DC.B    '[0] Maybe another time [LEAVE]',$0D,$0A,0
+                    
+MSG_ARTIST2         DC.B    $0D,$0A,'   "Okay, stay right there..."',$0D,$0A,$0D,$0A
+                    DC.B    'The artist begins painting fervently, quickly',$0D,$0A,'glancing between you and the canvas as he does so',$0D,$0A,$0D,$0A
+                    DC.B    '   "A little more there ... "',$0D,$0A,$0D,$0A
+                    DC.B    '   . . .',$0D,$0A,$0D,$0A
+                    DC.B    '   "Oh! And the hair ... "',$0D,$0A,$0D,$0A
+                    DC.B    '   . . .',$0D,$0A,$0D,$0A
+                    DC.B    '   "Okay! I think we',$27,'re done here. Have a look and see what you think."',$0D,$0A,$0D,$0A,0        
+
+MSG_ARTIST3         DC.B    '   "Well? What do you think?!", he asks excitedly',$0D,$0A,$0D,$0A  
+                    DC.B    '   "I--", you begin',$0D,$0A,$0D,$0A
+                    DC.B    '   "Isn',$27,'t it wonderful?! I think it may be some of my best work yet!",',$0D,$0A,'    he interrupts',$0D,$0A,$0D,$0A
+                    DC.B    '   "Well--"',$0D,$0A,$0D,$0A
+                    DC.B    '   "This could be the start of my new collection! The council will LOVE it.',$0D,$0A
+                    DC.B    '    You stay right there, I have to get my props!", he exclaims, as he walks',$0D,$0A
+                    DC.B    '    into the back room',$0D,$0A,$0D,$0A,$0D,$0A
+                    DC.B    'You decide to take this opportunity to silenty make your exit before he notices ...',$0D,$0A,$0D,$0A,0
 
 MSG_POTION_SUCCESS0:     DC.B   $0D,$0A,$0D,$0A,'You have successfully bought ',0
 MSG_POTION_SUCCESS1:     DC.B   ' potion/s!',0
@@ -563,7 +642,7 @@ ART_INSIDE_TOWN     DC.B    '             )                     (',$0D,$0A
                     DC.B    '::::::::::::::::::::::::::::::::::::::::::.',$0D,$0A
                     DC.B    ':::::::::::::::::::::::::::::::::::::::::::.',0
                 
-ART_PHIL:           DC.B        '                                    `-:+ooyyo+:-..```   '                                            
+ART_PHIL:           DC.B        '                                    `-:+ooyyo+:-..```   ',$0D,$0A                                         
                     DC.B        '                            `:/shhyyyhhhhyyysso+o+/:::-.`,',$0D,$0A                                
                     DC.B        '                         `.:/+shyyyyydddhddhhhhysooossso::`',$0D,$0A                                    
                     DC.B        '                       ./+ossyhyyhhdmmdddmmmmmdmdhdhhhyyss/.',$0D,$0A                                   
@@ -604,7 +683,7 @@ ART_PHIL:           DC.B        '                                    `-:+ooyyo+:
                     DC.B        '                                           `/dNMMMMMm+`            ',$0D,$0A                         
                     DC.B        '                                             :yNMNMNy.             ',$0D,$0A                         
                     DC.B        '                                                -oyys+-            ',$0D,$0A                           
-                    DC.B        '                                                  `` ',0
+                    DC.B        '                                                  `` ',$0D,$0A,0
 
 msg_instructions    dc.b    'Enter:'
                     dc.b    $0D,$0A
